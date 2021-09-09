@@ -403,6 +403,22 @@ constexpr static inline auto cross2d(const vec<T1, 2> &l, const vec<T2, 2> &r) {
     return l.x * r.y - l.y * r.x;
 }
 
+template <class T, unsigned n>
+constexpr static inline vec<T, n> one_pulse(size_t i, const T &value = 1) {
+    vec<T, n> v;
+    v[i] = value;
+    return v;
+}
+
+template <class T, unsigned n>
+constexpr static inline vec<T, n> fill(const T &value = 0) {
+    vec<T, n> v;
+    for (auto& vv:v.values){
+        vv = value;
+    }
+    return v;
+}
+
 // map系統
 #define MATH_FUNC_STD(func)                                                    \
     template <class T, unsigned n>                                             \
@@ -412,7 +428,7 @@ constexpr static inline auto cross2d(const vec<T1, 2> &l, const vec<T2, 2> &r) {
 #define MATH_FUNC_STD2(func)                                                   \
     template <class T, unsigned n>                                             \
     constexpr static inline auto func(const vec<T, n> &x, const T &y) {        \
-        return x.map([&y](const T &x) { return std::func(x, y); });              \
+        return x.map([&y](const T &x) { return std::func(x, y); });            \
     }
 //三角関数
 MATH_FUNC_STD(sin);
