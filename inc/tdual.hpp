@@ -84,22 +84,48 @@ template <class T> struct dual_func final {
     T operator()(const T &x) const { return re(x); }
 };
 
-template <class T1> constexpr auto operator+(const dual_func<T1> &x) {
-    return x;
+template <class T> constexpr auto operator+(const dual_func<T> &x) { return x; }
+
+template <class T> constexpr auto operator-(const dual_func<T> &x) {
+    return dual_func<T>([=](const T &value) { return -x.re(value); },
+                        [=](const T &value) { return -x.im(value); });
 }
 
-template <class T1> constexpr auto operator-(const dual_func<T1> &x) {
-    return dual_func<T1>([re = x.re](const T1 &x) { return -re(x); },
-                         [im = x.im](const T1 &x) { return -im(x); });
+template <class T> constexpr auto operator~(const dual_func<T> &x) {
+    return dual_func<T>(x.re, [=](const T &x) { return -x.im(x); });
 }
 
-template <class T1> constexpr auto operator~(const dual_func<T1> &x) {
-    return dual_func<T1>(x.re, [im = x.im](const T1 &x) { return -im(x); });
+template <class T>
+constexpr auto operator+(const dual_func<T> &x, const dual_func<T> &y) {
+    return dual_func<T>(
+        [=](const T &value) { return x.re(value) + y.re(value); },
+        [=](const T &value) { return x.im(value) + y.im(value); });
 }
 
-// template <class T1, class T2> constexpr auto operator~(const dual_func<T1>
-// &x) {
-//     return dual<decltype(-x.re)>(x.re, -x.im);
-// }
+template <class T>
+constexpr auto operator-(const dual_func<T> &x, const dual_func<T> &y) {
+    return dual_func<T>(
+        [=](const T &value) { return x.re(value) - y.re(value); },
+        [=](const T &value) { return x.im(value) - y.im(value); });
+}
+
+template <class T>
+constexpr auto operator*(const dual_func<T> &x, const dual_func<T> &y) {
+    return dual_func<T>(
+        [=](const T &value) { return x.re(value) * y.re(value); },
+        [=](const T &value) {
+            return x.re(value) * y.im(value) + x.im(value) * y.re(value);
+        });
+}
+
+template <class T>
+constexpr auto operator/(const dual_func<T> &x, const dual_func<T> &y) {
+    return dual_func<T>(
+        [=](const T &value) { return x.re(value) / y.re(value); },
+        [=](const T &value) {
+            return (-x.re(value) * y.im(value) - x.im(value) * y.re(value)) /
+                   (y.re(value) * y.re(value));
+        });
+}
 
 } // namespace tmath
