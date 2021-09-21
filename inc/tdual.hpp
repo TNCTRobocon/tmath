@@ -73,59 +73,70 @@ constexpr const dual<T1> &operator/=(dual<T1> &x, const dual<T2> &y) {
     return x;
 }
 
-template <class T> struct dual_func final {
-    using func = std::function<T(const T &)>;
-    func re, im;
-    constexpr dual_func(func _re, func _im) : re(_re), im(_im) {}
-    constexpr dual_func(const func &_re, const func &_im) : re(_re), im(_im) {}
-    constexpr dual_func(func &&_re, func &&_im) : re(_re), im(_im) {}
+template <class T, class R, class I> struct dual_func final {
+    // using func = std::function<T(const T &)>;
+    R re;
+    I im;
+    constexpr dual_func(R _re, I _im) : re(_re), im(_im) {}
+    constexpr dual_func(const R &_re, const I &_im) : re(_re), im(_im) {}
+    constexpr dual_func(R &&_re, I &&_im) : re(_re), im(_im) {}
     constexpr dual_func(const dual_func &) = default;
     constexpr dual_func(dual_func &&) = default;
     T operator()(const T &x) const { return re(x); }
 };
 
-template <class T> constexpr auto operator+(const dual_func<T> &x) { return x; }
-
-template <class T> constexpr auto operator-(const dual_func<T> &x) {
-    return dual_func<T>([=](const T &value) { return -x.re(value); },
-                        [=](const T &value) { return -x.im(value); });
+template <class T, class R, class I>
+constexpr auto operator+(const dual_func<T, R, I> &x) {
+    return x;
 }
 
-template <class T> constexpr auto operator~(const dual_func<T> &x) {
-    return dual_func<T>(x.re, [=](const T &x) { return -x.im(x); });
+template <class T, class R, class I>
+constexpr auto operator-(const dual_func<T, R, I> &x) {
+    auto re = [=](const T &value) { return -x.re(value); };
+    auto im = [=](const T &value) { return -x.im(value); };
+    return dual_func<T, decltype(re), decltype(im)>(re, im);
 }
 
-template <class T>
-constexpr auto operator+(const dual_func<T> &x, const dual_func<T> &y) {
-    return dual_func<T>(
-        [=](const T &value) { return x.re(value) + y.re(value); },
-        [=](const T &value) { return x.im(value) + y.im(value); });
+template <class T, class R, class I>
+constexpr auto operator~(const dual_func<T, R, I> &x) {
+    auto im = [=](const T &x) { return -x.im(x); };
+    return dual_func<T, R, decltype(im)>(x.re, im);
 }
 
-template <class T>
-constexpr auto operator-(const dual_func<T> &x, const dual_func<T> &y) {
-    return dual_func<T>(
-        [=](const T &value) { return x.re(value) - y.re(value); },
-        [=](const T &value) { return x.im(value) - y.im(value); });
+template <class T, class R1, class I1, class R2, class I2>
+constexpr auto operator+(const dual_func<T, R1, I1> &x,
+                         const dual_func<T, R2, I2> &y) {
+    auto re = [=](const T &value) { return x.re(value) + y.re(value); };
+    auto im = [=](const T &value) { return x.im(value) + y.im(value); };
+    return dual_func<T, decltype(re), decltype(im)>(re, im);
 }
 
-template <class T>
-constexpr auto operator*(const dual_func<T> &x, const dual_func<T> &y) {
-    return dual_func<T>(
-        [=](const T &value) { return x.re(value) * y.re(value); },
-        [=](const T &value) {
-            return x.re(value) * y.im(value) + x.im(value) * y.re(value);
-        });
+template <class T, class R1, class I1, class R2, class I2>
+constexpr auto operator-(const dual_func<T, R1, I1> &x,
+                         const dual_func<T, R2, I2> &y) {
+    auto re = [=](const T &value) { return x.re(value) - y.re(value); };
+    auto im = [=](const T &value) { return x.im(value) - y.im(value); };
+    return dual_func<T, decltype(re), decltype(im)>(re, im);
 }
 
-template <class T>
-constexpr auto operator/(const dual_func<T> &x, const dual_func<T> &y) {
-    return dual_func<T>(
-        [=](const T &value) { return x.re(value) / y.re(value); },
-        [=](const T &value) {
-            return (-x.re(value) * y.im(value) - x.im(value) * y.re(value)) /
-                   (y.re(value) * y.re(value));
-        });
+template <class T, class R1, class I1, class R2, class I2>
+constexpr auto operator*(const dual_func<T, R1, I1> &x,
+                         const dual_func<T, R2, I2> &y) {
+    auto re = [=](const T &value) { return x.re(value) * y.re(value); };
+    auto im = [=](const T &value) {
+        return x.re(value) * x.im(value) + x.im(value) * y.re(value);
+    };
+    return dual_func<T, decltype(re), decltype(im)>(re, im);
 }
 
+template <class T, class R1, class I1, class R2, class I2>
+constexpr auto operator/(const dual_func<T, R1, I1> &x,
+                         const dual_func<T, R2, I2> &y) {
+    auto re = [=](const T &value) { return x.re(value) / y.re(value); };
+    auto im = [=](const T &value) {
+        return (-x.re(value) * x.im(value) + x.im(value) * y.re(value)) /
+               (y.re(value) * y.re(value));
+    };
+    return dual_func<T, decltype(re), decltype(im)>(re, im);
+}
 } // namespace tmath
